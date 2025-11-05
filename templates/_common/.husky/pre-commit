@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Rodando verificações antes do commit..."
+
+npx lint-staged
+
+npm run type-check || exit 1
+
+echo "✅ Tudo certo! Commit liberado."

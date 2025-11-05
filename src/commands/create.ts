@@ -4,21 +4,22 @@ import inquirer from "inquirer";
 import ora from "ora";
 import path from "path";
 import fs from "fs";
-import shell from "shelljs";
+import { Framework, ProjectOptions } from "../types/index.js";
 
-type Framework = "Next.js" | "React.js" | "Node.js" | "Nest.js";
-type PackageManager = "npm" | "yarn" | "pnpm";
+import { generateNextJs } from "../generators/nextjs.js";
+import { generateNodeJs } from "../generators/nodejs.js";
+import { generateNestJs } from "../generators/nestjs.js";
+import { generateReact } from "../generators/react.js";
+import { GeneratorOptions } from "../types/index.js";
 
-interface ProjectOptions {
-  framework: Framework;
-  projectName?: string;
-  packageManager: PackageManager;
-}
-
-const getPackageManagerCommand = (packageManager: PackageManager): string => {
-  if (packageManager === "pnpm") return "pnpm dlx";
-  if (packageManager === "yarn") return "yarn create";
-  return "npx";
+const generators: Record<
+  Framework,
+  (options: GeneratorOptions) => Promise<void>
+> = {
+  "Next.js": generateNextJs,
+  "Node.js": generateNodeJs,
+  "Nest.js": generateNestJs,
+  "React.js": generateReact,
 };
 
 export const createProjectCommand = (): Command => {
@@ -55,11 +56,7 @@ export const createProjectCommand = (): Command => {
       const { framework, packageManager } = answers;
 
       if (!projectName) {
-        console.log(
-          chalk.red(
-            "Erro: O nome do projeto não foi fornecido. Tente novamente."
-          )
-        );
+        console.log(chalk.red("Erro: O nome do projeto não foi fornecido."));
         process.exit(1);
       }
 
@@ -74,35 +71,31 @@ export const createProjectCommand = (): Command => {
         process.exit(1);
       }
 
-      const spinner = ora("Gerando projeto...").start();
-      const pmCommand = getPackageManagerCommand(packageManager);
+      const spinner = ora(chalk.blue("Configurando seu projeto...")).start();
 
       try {
-        switch (framework) {
-          case "Next.js":
-            spinner.text = "Criando projeto Next.js com TypeScript...";
-            shell.exec(
-              `${pmCommand} create-next-app@latest ${projectName} --typescript --eslint --app`
-            );
-            break;
-
-          case "Node.js":
-            spinner.text = "Criando projeto Node.js com TypeScript...";
-            fs.mkdirSync(projectPath);
-            fs.mkdirSync(path.join(projectPath, "src"));
-            shell.cd(projectPath);
-            shell.exec(`${packageManager} install`);
-            break;
-
-          default:
-            spinner.fail(`❌ Framework "${framework}" não é suportado ainda.`);
-            process.exit(1);
+        const generate = generators[framework];
+        if (!generate) {
+          throw new Error(`Framework "${framework}" não é suportado ainda.`);
         }
 
-        spinner.succeed(`✅ Projeto "${projectName}" criado com sucesso!`);
-      } catch (err) {
-        spinner.fail("Ocorreu um erro ao criar o projeto.");
+        await generate({
+          projectName,
+          projectPath,
+          packageManager,
+          spinner,
+        });
 
+        spinner.succeed(
+          chalk.green(`Projeto "${projectName}" criado com sucesso!`)
+        );
+
+        console.log(chalk.cyanBright("\n🚀 Próximos passos:"));
+        console.log(chalk.white(`   cd ${projectName}`));
+        console.log(chalk.white(`   ${packageManager} install`));
+        console.log(chalk.white(`   ${packageManager} run dev`));
+      } catch (err) {
+        spinner.fail(chalk.red("Ocorreu um erro ao criar o projeto."));
         if (err instanceof Error) {
           console.error(err.message);
         } else {
