@@ -37,6 +37,13 @@ export const createProjectCommand = (): Command => {
           choices: ["Next.js", "React.js", "Node.js", "Nest.js"],
         },
         {
+          type: "list",
+          name: "architecture",
+          message: "Qual estrutura de projeto você deseja seguir?",
+          choices: ["Clean Architecture", "Hexagonal", "MVC"],
+          default: "Clean Architecture",
+        },
+        {
           type: "input",
           name: "projectName",
           message: "Qual o nome do seu projeto?",
@@ -83,6 +90,7 @@ export const createProjectCommand = (): Command => {
           projectName,
           projectPath,
           packageManager,
+          architecture: answers.architecture,
           spinner,
         });
 

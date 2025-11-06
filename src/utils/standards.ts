@@ -1,4 +1,3 @@
-// src/utils/standards.ts
 import { GeneratorOptions } from "../types/index.js";
 import { applyPrettier } from "../standards/prettier.js";
 import { applyHusky } from "../standards/husky.js";
@@ -19,9 +18,9 @@ export const applyDopsterStandards = async (options: StandardOptions) => {
   const standardOptions = { packageManager, spinner };
 
   try {
-    await applyPrettier(standardOptions);
+    // await applyPrettier(standardOptions);
     await applyHusky(standardOptions);
-    await applyEslint(standardOptions);
+    // await applyEslint(standardOptions);
   } catch (error) {
     shell.cd(originalCwd);
     throw error;
